@@ -1,0 +1,274 @@
+/* Fathom — visual system.
+   A dark scientific instrument: near-black, one cyan accent, monospace numerals,
+   hairline structure with a faint top-edge highlight for depth. No decoration. */
+
+:root {
+  /* surfaces, deepest -> raised */
+  --bg: #05070a;
+  --bg-grad: radial-gradient(140% 120% at 78% -20%, #0e1a24 0%, #070b10 46%, #05070a 100%);
+  --panel: #0b1015;
+  --panel-2: #0e141b;
+  --panel-raised: #131b23;
+  --panel-inset: #070b0f;
+
+  --border: #1a222c;
+  --border-bright: #2b3947;
+  --hair-top: rgba(255, 255, 255, 0.04); /* faux top-bevel highlight */
+
+  --text: #e2e8ef;
+  --text-dim: #7c8b99;
+  --text-faint: #47545f;
+
+  --accent: #34d1c4;
+  --accent-hi: #58e6da;
+  --accent-ink: #032420;
+  --accent-glow: rgba(52, 209, 196, 0.22);
+  --accent-line: rgba(52, 209, 196, 0.4);
+  --link: #74acff;
+
+  --ok: #46cf9c;
+  --warn: #eaa64a;
+  --bad: #ef6b73;
+  --unknown: #67788a;
+
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --h: 1px solid var(--border);
+  --r: 4px;
+  --r-lg: 6px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --shadow: 0 18px 44px -12px rgba(0, 0, 0, 0.7);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.45;
+  letter-spacing: 0.006em;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+#root {
+  overflow: hidden;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 600;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* number + unit rendering — use everywhere a value appears */
+.num {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+/* uppercase micro-label for section + panel titles */
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* range inputs are fully styled per-component (kit / Workspace / panels).
+   Only neutral resets here so the type selector never beats a component class. */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  outline: none;
+}
+input[type="range"]:disabled {
+  opacity: 0.5;
+}
+
+input[type="number"],
+select {
+  font: inherit;
+}
+
+/* Labels rendered into the 3D scene by CSS2DRenderer (src/three/axis.ts).
+   Global because they are created outside React, in plain Three.js code. */
+.f3d-tick {
+  font-family: var(--mono);
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--text-faint);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+.f3d-tick.is-active {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 10px;
+}
+.f3d-plane-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  background: rgba(5, 7, 10, 0.78);
+  border: 1px solid var(--accent-line);
+  border-radius: 3px;
+  padding: 3px 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+/* globe.gl ships its own "Left-click: rotate…" hint — we have our own affordances */
+.scene-nav-info {
+  display: none !important;
+}
+.scene-tooltip,
+.float-tooltip-kap {
+  font-family: var(--mono) !important;
+  font-size: 10px !important;
+}
+
+/* Clickable ocean-basin markers on the entry globe (src/three/globe.ts) */
+.f3d-region {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  transform: translate(-50%, -50%);
+  user-select: none;
+}
+.f3d-region-ring {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--unknown);
+  opacity: 0.5;
+  transition: transform 0.2s var(--ease), border-color 0.2s, box-shadow 0.2s, opacity 0.2s;
+}
+.f3d-region-label {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.f3d-region.has-data .f3d-region-ring {
+  border-color: var(--accent);
+  opacity: 1;
+  box-shadow: 0 0 14px var(--accent-glow), inset 0 0 10px var(--accent-glow);
+  animation: f3dPulse 2.4s ease-in-out infinite;
+}
+.f3d-region.has-data .f3d-region-label {
+  color: var(--accent);
+}
+.f3d-region.has-data:hover .f3d-region-ring {
+  transform: scale(1.35);
+  animation: none;
+}
+@keyframes f3dPulse {
+  50% {
+    transform: scale(1.14);
+  }
+}
+.f3d-country-tip {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text);
+  background: rgba(9, 13, 18, 0.92);
+  border: 1px solid var(--border-bright);
+  border-radius: 3px;
+  padding: 3px 8px;
+}
+
+/* notes pinned to the selected float's bead string (src/three/trail.ts) */
+.f3d-trail-floor,
+.f3d-trail-deep {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: rgba(5, 7, 10, 0.82);
+}
+.f3d-trail-floor {
+  color: var(--text-dim);
+  border: 1px dashed var(--border-bright);
+}
+.f3d-trail-deep {
+  color: var(--bad);
+  border: 1px solid rgba(239, 107, 115, 0.4);
+}
+
+.f3d-axis-title {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-bright);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a4a5a;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::selection {
+  background: var(--accent-glow);
+}

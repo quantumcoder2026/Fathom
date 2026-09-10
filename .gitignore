@@ -1,0 +1,23 @@
+# Python / data
+data/
+*.nc
+*.pyc
+__pycache__/
+.venv/
+.env.local
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store

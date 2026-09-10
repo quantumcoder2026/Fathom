@@ -1,0 +1,260 @@
+/* ─── chart framing ─────────────────────────────────────────── */
+.chartHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.chartName {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.chartFrame {
+  border: var(--h);
+  border-radius: var(--r);
+  background: var(--panel-inset);
+  padding: 4px 2px 2px;
+}
+.chartWrap {
+  width: 100%;
+  height: 154px;
+}
+.chartWrapSm {
+  width: 100%;
+  height: 72px;
+}
+
+.legend {
+  display: flex;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--text-dim);
+}
+.legend span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.legend i {
+  width: 12px;
+  height: 0;
+  border-top: 2px solid currentColor;
+  display: inline-block;
+}
+.lObs {
+  color: var(--accent);
+}
+.lMod {
+  color: #98a4b0;
+  border-top-style: dashed !important;
+}
+.legendDim {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--text-faint);
+}
+
+.note {
+  margin-top: 7px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--text-dim);
+}
+.badNote {
+  color: var(--bad);
+}
+
+/* ─── stats section ─────────────────────────────────────────── */
+.section {
+  margin-top: 13px;
+}
+.matchLine {
+  margin-top: 9px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--text-faint);
+  line-height: 1.65;
+}
+
+/* ─── error decomposition ──────────────────────────────────── */
+.decomp {
+  margin-top: 14px;
+  border: var(--h);
+  border-left: 2px solid var(--accent);
+  border-radius: var(--r);
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--panel-raised), var(--panel-inset));
+}
+.decompBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  border-bottom: var(--h);
+  background: rgba(52, 209, 196, 0.06);
+}
+.decompTag {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+/* the evidence verdict is colour-coded: green good, amber weak, red unconstrained */
+.decompTag[data-verdict="constrained"] {
+  color: var(--ok);
+}
+.decompTag[data-verdict="unconstrained"] {
+  color: var(--bad);
+}
+
+/* the point inspector's evidence card leads with amber, not the cyan accent,
+   so it never gets mistaken for the float comparison */
+.evidenceCard {
+  border-left-color: var(--warn);
+}
+.evidenceCard .decompBar {
+  background: rgba(234, 166, 74, 0.07);
+}
+.decompQ {
+  padding: 11px 13px 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+.shiftRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 13px 8px;
+}
+.shiftRange {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 4px;
+  border: var(--h);
+  border-radius: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--accent) 0 var(--fill, 50%),
+    var(--panel-inset) var(--fill, 50%) 100%
+  );
+  outline: none;
+}
+.shiftRange::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--accent-line), 0 0 12px var(--accent-glow);
+  cursor: pointer;
+}
+.shiftVal {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 52px;
+  text-align: right;
+}
+.snap {
+  margin: 0 13px 12px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--accent-ink);
+  background: var(--accent);
+  padding: 6px 12px;
+  border-radius: var(--r);
+  align-self: flex-start;
+  transition: box-shadow 0.14s, transform 0.1s;
+}
+.snap:hover {
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+.snap:active {
+  transform: translateY(1px);
+}
+.figs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border-top: var(--h);
+  border-bottom: var(--h);
+}
+.fig {
+  background: var(--panel);
+  padding: 9px 11px;
+}
+.figLabel {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.figValue {
+  margin-top: 3px;
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.verdict {
+  padding: 10px 13px 12px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+.verdict b {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ─── provenance popover ───────────────────────────────────── */
+.source {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--link);
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background 0.12s;
+}
+.source:hover {
+  background: var(--panel-raised);
+}
+.pop {
+  position: absolute;
+  top: 38px;
+  right: 12px;
+  z-index: 20;
+  width: 268px;
+  padding: 13px 15px;
+  background: var(--panel-raised);
+  border: var(--h);
+  border-radius: var(--r);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  line-height: 2;
+  box-shadow: var(--shadow);
+}
+.pop b {
+  color: var(--text-faint);
+  font-weight: 400;
+  display: inline-block;
+  min-width: 118px;
+}

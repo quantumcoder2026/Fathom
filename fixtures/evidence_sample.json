@@ -1,0 +1,16 @@
+[
+  { "lat": 7, "lon": 88, "depth": 75, "n_observations": 6, "days_since_last": 1, "confidence": 0.936, "status": "constrained" },
+  { "lat": 7, "lon": 90, "depth": 75, "n_observations": 3, "days_since_last": 5, "confidence": 0.717, "status": "constrained" },
+  { "lat": 9, "lon": 86, "depth": 75, "n_observations": 5, "days_since_last": 2, "confidence": 0.875, "status": "constrained" },
+  { "lat": 9, "lon": 88, "depth": 75, "n_observations": 4, "days_since_last": 6, "confidence": 0.670, "status": "constrained" },
+  { "lat": 11, "lon": 86, "depth": 75, "n_observations": 3, "days_since_last": 9, "confidence": 0.549, "status": "weak" },
+  { "lat": 11, "lon": 88, "depth": 75, "n_observations": 2, "days_since_last": 7, "confidence": 0.418, "status": "weak" },
+  { "lat": 11, "lon": 90, "depth": 75, "n_observations": 2, "days_since_last": 14, "confidence": 0.262, "status": "weak" },
+  { "lat": 13, "lon": 86, "depth": 75, "n_observations": 1, "days_since_last": 11, "confidence": 0.160, "status": "unconstrained" },
+  { "lat": 13, "lon": 88, "depth": 75, "n_observations": 1, "days_since_last": 22, "confidence": 0.077, "status": "unconstrained" },
+  { "lat": 13, "lon": 90, "depth": 75, "n_observations": 0, "days_since_last": null, "confidence": 0.0, "status": "unconstrained" },
+  { "lat": 15, "lon": 86, "depth": 75, "n_observations": 1, "days_since_last": 28, "confidence": 0.052, "status": "unconstrained" },
+  { "lat": 15, "lon": 88, "depth": 75, "n_observations": 0, "days_since_last": null, "confidence": 0.0, "status": "unconstrained" },
+  { "lat": 15, "lon": 90, "depth": 75, "n_observations": 0, "days_since_last": null, "confidence": 0.0, "status": "unconstrained" },
+  { "lat": 17, "lon": 88, "depth": 75, "n_observations": 2, "days_since_last": 4, "confidence": 0.511, "status": "weak" }
+]

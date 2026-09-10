@@ -1,0 +1,24 @@
+# Fathom (SIH26067) — Python deps. One shared venv at repo root: .venv/
+# Setup:  python -m venv .venv  &&  .venv\Scripts\pip install -r requirements.txt
+# Run API:  .venv\Scripts\uvicorn api.main:app --reload
+
+# --- backend (api/) ---
+fastapi
+uvicorn[standard]
+pydantic
+numpy
+
+# --- data pipeline + Ocean Match (pipeline/, compare/) ---
+xarray
+netCDF4
+scipy
+gsw            # TEOS-10 seawater: pressure (dbar) -> depth (m)
+matplotlib     # sanity-check plots only
+
+# --- data acquisition (run once) ---
+copernicusmarine   # Copernicus GLORYS model subset download (was under maintenance 2026-09-10)
+# Argo: fetched via plain HTTP from the Ifremer ERDDAP (pipeline/fetch_argo.py) — no argopy.
+# argopy 0.1.x breaks on numpy 2; 1.4.x needs a newer fsspec than the rest of the stack allows.
+
+# --- notebooks ---
+jupyter

@@ -1,0 +1,177 @@
+.screen {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-grad);
+  overflow: hidden;
+}
+.screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 220px 40px rgba(0, 0, 0, 0.6);
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.mark {
+  position: absolute;
+  top: 34px;
+  left: 38px;
+  pointer-events: none;
+}
+.wordmark {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.44em;
+  color: var(--text);
+}
+.tagline {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  max-width: 280px;
+  line-height: 1.55;
+  border-left: 2px solid var(--accent-line);
+  padding-left: 11px;
+}
+
+.legend {
+  position: absolute;
+  bottom: 32px;
+  left: 38px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.legendRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+.swatch {
+  width: 20px;
+  height: 2px;
+  border-radius: 2px;
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin: 0 6px 0 6px;
+  flex-shrink: 0;
+}
+.on {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+.off {
+  background: var(--unknown);
+}
+
+.stamp {
+  position: absolute;
+  bottom: 30px;
+  right: 36px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.hoverCard {
+  position: absolute;
+  top: 50%;
+  right: 48px;
+  width: 248px;
+  padding: 18px 20px;
+  background: rgba(11, 16, 21, 0.85);
+  backdrop-filter: blur(8px);
+  border: var(--h);
+  border-left: 2px solid var(--accent);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transform: translate(14px, -50%);
+  transition: opacity 0.28s var(--ease), transform 0.28s var(--ease);
+  pointer-events: none;
+}
+.hoverCard.show {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+.hoverLabel {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.hoverMeta {
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.85;
+}
+.hoverHint {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: var(--h);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.hoverHint.disabled {
+  color: var(--text-faint);
+}
+
+.entering {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(5, 7, 10, 0.55);
+  backdrop-filter: blur(2px);
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  animation: fade 0.4s var(--ease);
+}
+.entering::before {
+  content: "";
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--accent-line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
