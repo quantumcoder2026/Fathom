@@ -266,12 +266,15 @@ export default function ComparisonPanel() {
             </div>
           </div>
           <div className={styles.verdict}>
-            {Math.abs(dec.best_shift_m) > 100 ? (
+            {!dec.conclusive ? (
               <>No clear displacement signal — the misfit doesn’t line up with a vertical shift.</>
             ) : (
               <>
                 <b>{Math.round(dec.displacement_fraction * 100)}% of this error is displacement</b>,
-                not amplitude — the model has the right water in the wrong place.
+                not amplitude — the model has the right water in the wrong place.{" "}
+                <span className={styles.legendDim}>
+                  over {dec.n_valid_after_shift} levels with model coverage at this shift
+                </span>
               </>
             )}
           </div>

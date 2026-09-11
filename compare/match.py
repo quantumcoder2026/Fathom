@@ -40,21 +40,52 @@ class UnitMismatch(RuntimeError):
     pass
 
 
-@lru_cache(maxsize=1)
-def _meta() -> dict:
+def _stamp() -> float:
+    """Modification time of meta.json — every cache below is keyed on it, so a
+    re-run of precompute.py invalidates them instead of serving the previous
+    dataset's grid dimensions against the new dataset's binaries."""
+    return (FIELD / "meta.json").stat().st_mtime
+
+
+@lru_cache(maxsize=4)
+def _meta_at(stamp: float) -> dict:
     return json.loads((FIELD / "meta.json").read_text())
 
 
-@lru_cache(maxsize=64)
-def _column(variable: str, t: int, row: int, col: int) -> tuple[float, ...]:
-    """The model's vertical column at one grid cell, one time step."""
-    m = _meta()
-    nx = m["nx"]
+def _meta() -> dict:
+    return _meta_at(_stamp())
+
+
+@lru_cache(maxsize=256)
+def _column_at(stamp: float, variable: str, t: int, row: int, col: int) -> tuple[float, ...]:
+    """The model's vertical column at one grid cell, one time step.
+
+    Reads only the four bytes it needs per level (seek by offset) rather than
+    pulling the whole grid into memory — a GLORYS level is 1.7 MB, and a column
+    touches every level."""
+    m = _meta_at(stamp)
+    nx, ny = m["nx"], m["ny"]
+    if not (0 <= row < ny and 0 <= col < nx):
+        raise IndexError(f"cell ({row},{col}) outside the {ny}x{nx} grid")
+    offset = (row * nx + col) * 4
+    expected = nx * ny * 4
     out = []
     for d in range(len(m["depths"])):
-        grid = np.fromfile(FIELD / variable / str(t) / f"{d}.bin", dtype="<f4")
-        out.append(float(grid[row * nx + col]))
+        path = FIELD / variable / str(t) / f"{d}.bin"
+        size = path.stat().st_size
+        if size != expected:
+            # meta and the binaries disagree — refuse rather than index into the
+            # wrong ocean and return a confident wrong number
+            raise ValueError(
+                f"{path.name} is {size} bytes, meta.json describes {nx}x{ny} "
+                f"({expected} bytes). Re-run pipeline/precompute.py."
+            )
+        out.append(float(np.fromfile(path, dtype="<f4", count=1, offset=offset)[0]))
     return tuple(out)
+
+
+def _column(variable: str, t: int, row: int, col: int) -> tuple[float, ...]:
+    return _column_at(_stamp(), variable, t, row, col)
 
 
 def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:

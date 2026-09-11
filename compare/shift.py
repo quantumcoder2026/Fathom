@@ -14,10 +14,18 @@ observations, and report how much of the raw RMSE that shift explains.
 
 Method (mirrors the atmospheric forecast-verification technique, not our own
 invention): for each candidate shift s, re-interpolate the ORIGINAL model column
-onto (observed_depths + s) and recompute RMSE. Three traps this avoids:
+onto (observed_depths + s) and recompute RMSE. Four traps this avoids:
   - always re-interpolate from the original column, never from a shifted copy
   - require at least 60% of levels to still have model coverage after the shift
+  - score the shifted RMSE against the unshifted RMSE over THE SAME levels, and
+    pick the shift by that ratio. Scoring a shifted subset against the full
+    profile rewards a shift for pushing the worst-fitting levels out of range,
+    which reports displacement that isn't there.
   - a best shift at the edge of the search window is "no clear signal", not a result
+
+`raw_rmse` is therefore the unshifted RMSE over the levels the chosen shift is
+scored on — equal to the full-profile RMSE whenever the shift keeps every level,
+which is the usual case.
 """
 
 from __future__ import annotations
@@ -56,29 +64,38 @@ def decompose_error(result: dict) -> dict | None:
     uniq = np.concatenate(([True], np.diff(md) > 0))
     md, mv = md[uniq], mv[uniq]
 
-    raw_rmse = float(np.sqrt(((obs_v - np.array([p["model"] for p in ok])) ** 2).mean()))
-    if raw_rmse == 0:
+    model_at_obs = np.array([p["model"] for p in ok], dtype="float64")
+    if float(np.sqrt(((obs_v - model_at_obs) ** 2).mean())) == 0:
         return None
 
-    best: tuple[float, float, int] | None = None
+    # (ratio, shift, shifted_rmse, baseline_rmse, n_valid)
+    best: tuple[float, float, float, float, int] | None = None
     for s in range(-SEARCH_M, SEARCH_M + 1, STEP_M):
         shifted = np.array([_interp_no_extrap(md, mv, d + s) for d in obs_d])
         valid = np.isfinite(shifted)
         if valid.mean() < MIN_COVERAGE:
             continue
         rmse = float(np.sqrt(((obs_v[valid] - shifted[valid]) ** 2).mean()))
-        if best is None or rmse < best[1]:
-            best = (float(s), rmse, int(valid.sum()))
+        # Baseline over the SAME levels the shift could be scored on. Comparing a
+        # shifted RMSE against the full-profile RMSE rewards a shift purely for
+        # pushing the hardest levels out of the model's range, which inflates the
+        # displacement fraction; scoring both on one set removes that.
+        base = float(np.sqrt(((obs_v[valid] - model_at_obs[valid]) ** 2).mean()))
+        if base == 0:
+            continue
+        ratio = rmse / base
+        if best is None or ratio < best[0]:
+            best = (ratio, float(s), rmse, base, int(valid.sum()))
 
     if best is None:
         return None
-    best_shift, shifted_rmse, n_valid = best
+    ratio, best_shift, shifted_rmse, base_rmse, n_valid = best
 
     return {
-        "raw_rmse": round(raw_rmse, 3),
+        "raw_rmse": round(base_rmse, 3),
         "best_shift_m": best_shift,
         "shifted_rmse": round(shifted_rmse, 3),
-        "displacement_fraction": round(max(0.0, 1.0 - shifted_rmse / raw_rmse), 3),
+        "displacement_fraction": round(max(0.0, 1.0 - ratio), 3),
         "n_valid_after_shift": n_valid,
         # a shift pinned to the edge of the window means the misfit doesn't
         # actually look like a vertical displacement

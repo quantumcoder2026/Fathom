@@ -109,14 +109,16 @@ class ComparisonProvenance(BaseModel):
 
 
 class ErrorDecomposition(BaseModel):
-    """Output of compare/shift.py decompose_error(). best_shift_m beyond ~100 m
-    means 'no clear displacement signal', not a real result."""
+    """Output of compare/shift.py decompose_error(). A best_shift_m at the edge of
+    the search window means 'no clear displacement signal', not a real result —
+    `conclusive` carries that judgement so the UI doesn't have to re-derive it."""
 
-    raw_rmse: float
+    raw_rmse: float  # unshifted RMSE over the levels the chosen shift is scored on
     best_shift_m: float
     shifted_rmse: float
     displacement_fraction: float  # 1 - (shifted_rmse / raw_rmse), 0..1
     n_valid_after_shift: int
+    conclusive: bool
 
 
 class ComparisonResult(BaseModel):

@@ -130,6 +130,14 @@ def field_grid(variable: str, t: int, d: int):
     path = FIELD_DIR / variable / str(t) / f"{d}.bin"
     if path.exists():
         return Response(content=path.read_bytes(), media_type="application/octet-stream")
+    if have_field():
+        # Real-data mode with a hole in it. Synthesising here would put invented
+        # numbers on screen dressed as the model — the one thing this project
+        # promises never to do. Say the level is missing instead.
+        raise HTTPException(
+            404,
+            f"no precomputed grid for {variable} t={t} d={d} — re-run pipeline/precompute.py",
+        )
     grid = _synth_field(meta, variable, t, d)
     return Response(content=grid.tobytes(), media_type="application/octet-stream")
 
@@ -191,9 +199,24 @@ def compare(float_id: str, variable: str = "temperature"):
     return result
 
 
+def _check_evidence_args(t: int, radius: float, half_life: float, d: int | None = None) -> None:
+    """Both evidence routes index straight into data/field/<t>/<d>.bin, so an
+    out-of-range index used to surface as an unhandled FileNotFoundError (500)."""
+    meta = field_meta_dict()
+    if not 0 <= t < len(meta["times"]):
+        raise HTTPException(404, f"time index {t} out of range 0..{len(meta['times']) - 1}")
+    if d is not None and not 0 <= d < len(meta["depths"]):
+        raise HTTPException(404, f"depth index {d} out of range 0..{len(meta['depths']) - 1}")
+    if not 0 < radius <= 20:
+        raise HTTPException(422, "radius must be greater than 0 and at most 20 degrees")
+    if not 0 < half_life <= 365:
+        raise HTTPException(422, "half_life must be greater than 0 and at most 365 days")
+
+
 @app.get("/evidence", response_model=list[EvidenceCell])
 def evidence(t: int = 0, d: int = 0, radius: float = 2.5, half_life: float = 21.0):
     if have_field() and have_floats():
+        _check_evidence_args(t, radius, half_life, d)
         from compare.evidence import evidence_grid
         return evidence_grid(t, d, radius, half_life)
     return load("evidence_sample.json")
@@ -202,6 +225,7 @@ def evidence(t: int = 0, d: int = 0, radius: float = 2.5, half_life: float = 21.
 @app.get("/evidence/headline", response_model=UnconstrainedSummary)
 def evidence_headline(t: int = 0, region: str = "full", radius: float = 2.5, half_life: float = 21.0):
     if have_field() and have_floats():
+        _check_evidence_args(t, radius, half_life)
         from compare.evidence import unconstrained_fraction
         return unconstrained_fraction(t, region, radius, half_life)
     return {"percent": 38, "label": "the Bay of Bengal", "n_cells": 0, "time_index": t}

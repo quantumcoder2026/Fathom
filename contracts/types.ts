@@ -123,11 +123,15 @@ export interface ComparisonResult {
  * best_shift_m beyond ~100 m means "no clear displacement signal", not a real result.
  */
 export interface ErrorDecomposition {
+  /** Unshifted RMSE over the levels the chosen shift is scored on. */
   raw_rmse: number;
   best_shift_m: number;
   shifted_rmse: number;
   displacement_fraction: number; // 1 - (shifted_rmse / raw_rmse), 0..1
   n_valid_after_shift: number;
+  /** false when the best shift sits at the edge of the search window — the
+   *  misfit doesn't look like a vertical displacement, so don't claim one. */
+  conclusive: boolean;
 }
 
 /** One coarse cell of the observational-evidence grid. Served at GET /evidence?t=&d=. */
