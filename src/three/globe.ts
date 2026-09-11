@@ -166,6 +166,7 @@ export function createGlobe(
 ): GlobeHandle {
   const countries = JSON.parse(countrySource) as { features: CountryFeature[] };
   let hovered: string | null = null;
+  let pointHovered = false;
 
   const globe = new Globe(container)
     .backgroundColor("rgba(0,0,0,0)")
@@ -213,6 +214,14 @@ export function createGlobe(
       const f = d as GlobeFloat;
       cb.onSelectFloat(f.id, f.lat, f.lon);
     })
+    .onPointHover((d) => {
+      // the dots are small — hold the globe still while the cursor is on one,
+      // and switch to a pointer cursor, or they're almost impossible to hit
+      const over = d !== null;
+      pointHovered = over;
+      globe.controls().autoRotate = !over && hovered === null;
+      container.style.cursor = over ? "pointer" : "";
+    })
     .htmlElementsData(regions as unknown as object[])
     .htmlLat((d) => (d as GlobeRegion).lat)
     .htmlLng((d) => (d as GlobeRegion).lon)
@@ -228,7 +237,7 @@ export function createGlobe(
       el.addEventListener("pointerleave", () => {
         if (hovered !== region.id) return;
         hovered = null;
-        globe.controls().autoRotate = true;
+        globe.controls().autoRotate = !pointHovered;
         cb.onHoverRegion(null);
       });
       el.addEventListener("click", () => {
