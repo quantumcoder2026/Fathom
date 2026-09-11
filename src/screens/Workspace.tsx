@@ -1,4 +1,4 @@
-import { useCallback, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
 import { api } from "../api/client";
 import ComparisonPanel from "../panels/ComparisonPanel";
@@ -36,6 +36,27 @@ export default function Workspace() {
   const depthM = meta?.depths[s.depthIndex] ?? 0;
   const nTimes = meta?.times.length ?? 1;
   const unit = s.variable === "temperature" ? "°C" : "psu";
+
+  // the picked point's own seafloor — the deepest level where its column still
+  // has data. Clamps the global depth slider so it can't step past where this
+  // point stops having anything to show.
+  const depthMaxGlobal = Math.max(0, (meta?.depths.length ?? 1) - 1);
+  const pickedSeafloorIndex = (() => {
+    if (!picked?.column) return null;
+    let last = -1;
+    picked.column.forEach((v, i) => {
+      if (v !== null) last = i;
+    });
+    return last >= 0 ? last : null;
+  })();
+  const depthMax = pickedSeafloorIndex !== null ? Math.min(depthMaxGlobal, pickedSeafloorIndex) : depthMaxGlobal;
+
+  useEffect(() => {
+    if (pickedSeafloorIndex !== null && s.depthIndex > pickedSeafloorIndex) {
+      s.setDepthIndex(pickedSeafloorIndex);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickedSeafloorIndex]);
 
   return (
     <div className={styles.shell}>
@@ -106,9 +127,14 @@ export default function Workspace() {
             value={s.depthIndex}
             display={`${depthM} m`}
             min={0}
-            max={Math.max(0, (meta?.depths.length ?? 1) - 1)}
+            max={depthMax}
             onChange={s.setDepthIndex}
           />
+          {pickedSeafloorIndex !== null && depthMax < depthMaxGlobal && (
+            <p className={styles.groupNote}>
+              clamped to the picked point's seafloor — {meta?.depths[pickedSeafloorIndex]} m
+            </p>
+          )}
         </RailGroup>
 
         <RailGroup n="02" title="3D view">
