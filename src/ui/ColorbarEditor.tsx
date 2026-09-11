@@ -55,7 +55,12 @@ export default function ColorbarEditor() {
             type="number"
             value={min}
             step={0.5}
-            onChange={(e) => setColormap({ min: Number(e.target.value) })}
+            onChange={(e) => {
+              // an empty or half-typed box reads as "" -> Number("") is 0, which
+              // silently snapped the scale to zero mid-keystroke
+              const v = Number(e.target.value);
+              if (e.target.value !== "" && Number.isFinite(v)) setColormap({ min: v });
+            }}
           />
         </div>
         <div className={styles.field}>
@@ -64,7 +69,10 @@ export default function ColorbarEditor() {
             type="number"
             value={max}
             step={0.5}
-            onChange={(e) => setColormap({ max: Number(e.target.value) })}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              if (e.target.value !== "" && Number.isFinite(v)) setColormap({ max: v });
+            }}
           />
         </div>
       </div>

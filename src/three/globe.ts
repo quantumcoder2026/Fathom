@@ -44,6 +44,8 @@ export interface GlobeHandle {
   resize: () => void;
   dispose: () => void;
   setHovered: (id: string | null) => void;
+  /** Replace the plotted float dots without rebuilding the globe. */
+  setFloats: (floats: GlobeFloat[]) => void;
   flyTo: (id: string, done: () => void) => void;
   flyToLatLon: (lat: number, lon: number, done: () => void) => void;
 }
@@ -291,6 +293,9 @@ export function createGlobe(
 
   return {
     resize,
+    setFloats: (next) => {
+      globe.pointsData(next as unknown as object[]);
+    },
     setHovered: (id) => {
       hovered = id;
       controls.autoRotate = id === null;

@@ -13,7 +13,7 @@
 import * as THREE from "three";
 
 import type { EvidenceCell, FieldMeta } from "../../contracts/types";
-import { depthToWorldY, planeDimensions } from "./coords";
+import { depthToWorldY, lonLatToWorldXZ } from "./coords";
 
 const COLORS: Record<EvidenceCell["status"], [number, number, number, number]> = {
   constrained: [52, 209, 196, 70],
@@ -70,8 +70,25 @@ export class EvidenceLayer {
     tex.minFilter = THREE.NearestFilter;
     tex.needsUpdate = true;
 
-    const { width, height } = planeDimensions(this.meta);
-    const geo = new THREE.PlaneGeometry(width * 1.02, height * 1.02);
+    // The evidence grid starts at floor(domain / step) * step and covers whole
+    // cells, so its extent is NOT the model's extent — with a 3 deg radius it
+    // overhangs by up to 2 deg a side. Sizing the sheet to the model domain
+    // stretched the cells and put red squares over the wrong water, so derive
+    // the real extent from the cell centres instead.
+    const latStep = lats.length > 1 ? lats[1] - lats[0] : 1;
+    const lonStep = lons.length > 1 ? lons[1] - lons[0] : 1;
+    const [x0, z0] = lonLatToWorldXZ(this.meta, lons[0] - lonStep / 2, lats[0] - latStep / 2);
+    const [x1, z1] = lonLatToWorldXZ(
+      this.meta,
+      lons[nCol - 1] + lonStep / 2,
+      lats[nRow - 1] + latStep / 2,
+    );
+    const width = Math.abs(x1 - x0);
+    const height = Math.abs(z0 - z1);
+    const cx = (x0 + x1) / 2;
+    const cz = (z0 + z1) / 2;
+
+    const geo = new THREE.PlaneGeometry(width, height);
     geo.rotateX(-Math.PI / 2);
     const mat = new THREE.MeshBasicMaterial({
       map: tex,
@@ -80,17 +97,18 @@ export class EvidenceLayer {
       depthWrite: false,
     });
     this.mesh = new THREE.Mesh(geo, mat);
+    this.mesh.position.set(cx, 0, cz);
     this.mesh.renderOrder = 900;
 
     // thin cell outlines so it reads as a grid, not a smear
     const pts: number[] = [];
     for (let i = 0; i <= nCol; i++) {
-      const x = -width / 2 + (i / nCol) * width;
-      pts.push(x, 0, -height / 2, x, 0, height / 2);
+      const x = cx - width / 2 + (i / nCol) * width;
+      pts.push(x, 0, cz - height / 2, x, 0, cz + height / 2);
     }
     for (let j = 0; j <= nRow; j++) {
-      const z = -height / 2 + (j / nRow) * height;
-      pts.push(-width / 2, 0, z, width / 2, 0, z);
+      const z = cz - height / 2 + (j / nRow) * height;
+      pts.push(cx - width / 2, 0, z, cx + width / 2, 0, z);
     }
     const lgeo = new THREE.BufferGeometry();
     lgeo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));

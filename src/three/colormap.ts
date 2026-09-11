@@ -58,26 +58,36 @@ export interface ColormapOptions {
   scale?: "linear" | "log";
 }
 
-/** RGBA bytes for a Float32 grid. Length = grid.length * 4. NaN -> alpha 0. */
+/** RGBA bytes for a Float32 grid. Length = grid.length * 4. Missing -> alpha 0. */
 export function gridToRGBA(grid: Float32Array, opts: ColormapOptions): Uint8Array {
   const { palette, min, max } = opts;
   const scale = opts.scale ?? "linear";
   const out = new Uint8Array(grid.length * 4);
   const span = max - min || 1;
-  const logMin = Math.log(Math.max(min, 1e-6));
-  const logSpan = Math.log(Math.max(max, 1e-6)) - logMin || 1;
+
+  // A log scale needs a positive domain. Ocean temperature ranges routinely
+  // start at or below 0, and flooring those at 1e-6 put six orders of magnitude
+  // of empty scale below the data — every real value landed in the top fifth of
+  // the palette and the log view was a flat wash. Floor at three decades below
+  // the top instead, and fall back to linear if nothing is positive.
+  const useLog = scale === "log" && max > 0;
+  const lo = min > 0 ? min : max * 1e-3;
+  const logLo = useLog ? Math.log(lo) : 0;
+  const logSpan = useLog ? Math.log(max) - logLo || 1 : 1;
 
   for (let i = 0; i < grid.length; i++) {
     const v = grid[i];
     const o = i * 4;
-    if (Number.isNaN(v)) {
+    // isFinite, not !isNaN: an infinity would otherwise be painted as a real value
+    if (!Number.isFinite(v)) {
       out[o + 3] = 0; // missing / land — transparent, not a colour
       continue;
     }
-    const t =
-      scale === "log"
-        ? (Math.log(Math.max(v, 1e-6)) - logMin) / logSpan
-        : (v - min) / span;
+    const t = useLog
+      ? v <= lo
+        ? 0
+        : (Math.log(v) - logLo) / logSpan
+      : (v - min) / span;
     const [r, g, b] = samplePalette(palette, t);
     out[o] = r;
     out[o + 1] = g;

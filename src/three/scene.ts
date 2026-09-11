@@ -68,6 +68,11 @@ export function createScene(canvas: HTMLCanvasElement, labelLayer: HTMLElement):
     renderer.setAnimationLoop(null);
     controls.dispose();
     renderer.dispose();
+    // Deliberately NOT forceContextLoss(): the <canvas> element outlives this
+    // renderer (React keeps the same node across a StrictMode remount) and a
+    // canvas only ever gets one WebGL context, so losing it here leaves the
+    // next renderer with nothing to draw on — a black viewport. Reusing the
+    // context is the correct behaviour, not a leak.
     labelLayer.replaceChildren();
   };
 

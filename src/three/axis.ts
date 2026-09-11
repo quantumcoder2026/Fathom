@@ -65,7 +65,6 @@ export class DepthAxis {
       obj.position.set(this.axisX - 2.2, 0, this.axisZ);
       this.labels.push(obj);
       this.group.add(obj);
-      void depth;
     }
 
     this.title = new CSS2DObject(labelEl("f3d-axis-title", "depth (m)"));

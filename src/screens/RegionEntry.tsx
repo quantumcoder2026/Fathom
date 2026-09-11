@@ -46,6 +46,17 @@ export default function RegionEntry() {
     };
   }, []);
 
+  // `floats` arrives a moment after mount. It is deliberately NOT a dependency
+  // of the effect below — including it tore the whole globe down and rebuilt it
+  // (textures, country polygons, camera) the instant the fetch resolved. The
+  // dots are pushed in through the handle instead.
+  const floatsRef = useRef(floats);
+
+  useEffect(() => {
+    floatsRef.current = floats;
+    handleRef.current?.setFloats(floats);
+  }, [floats]);
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -61,7 +72,7 @@ export default function RegionEntry() {
       };
     };
 
-    const handle = createGlobe(container, globeRegions, floats, {
+    const handle = createGlobe(container, globeRegions, floatsRef.current, {
       onHoverRegion: (id) => setHoveredId(id),
       onSelectRegion: (id) => {
         const region = REGIONS.find((r) => r.id === id);
@@ -81,6 +92,7 @@ export default function RegionEntry() {
     });
 
     handleRef.current = handle;
+    handle.setFloats(floatsRef.current);
     const ro = new ResizeObserver(() => handle.resize());
     ro.observe(container);
     return () => {
@@ -88,7 +100,7 @@ export default function RegionEntry() {
       handle.dispose();
       handleRef.current = null;
     };
-  }, [globeRegions, floats, enterRegion, selectFloat]);
+  }, [globeRegions, enterRegion, selectFloat]);
 
   const hovered = REGIONS.find((r) => r.id === hoveredId) ?? null;
   const cells = meta ? meta.nx * meta.ny * meta.depths.length : null;

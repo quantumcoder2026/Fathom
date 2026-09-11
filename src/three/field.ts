@@ -129,7 +129,7 @@ export class FieldLayers {
     let max = -Infinity;
     for (let i = 0; i < grid.length; i++) {
       const v = grid[i];
-      if (Number.isNaN(v)) continue;
+      if (!Number.isFinite(v)) continue;
       if (v < min) min = v;
       if (v > max) max = v;
     }
