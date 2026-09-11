@@ -47,7 +47,7 @@ export default function Workspace() {
   );
 
   const iso = meta?.times[s.timeIndex]?.slice(0, 10) ?? "";
-  const depthM = meta?.depths[s.depthIndex] ?? 0;
+  const depthM = Math.round(meta?.depths[s.depthIndex] ?? 0);
   const nTimes = meta?.times.length ?? 1;
   const unit = s.variable === "temperature" ? "°C" : "psu";
 
@@ -146,7 +146,7 @@ export default function Workspace() {
           />
           {pickedSeafloorIndex !== null && depthMax < depthMaxGlobal && (
             <p className={styles.groupNote}>
-              clamped to the picked point's seafloor — {meta?.depths[pickedSeafloorIndex]} m
+              clamped to the picked point's seafloor — {Math.round(meta?.depths[pickedSeafloorIndex] ?? 0)} m
             </p>
           )}
         </RailGroup>
@@ -257,8 +257,8 @@ export default function Workspace() {
           </div>
           <div className={styles.depthGutter}>
             <span>0 m</span>
-            <span>{meta?.depths[Math.floor((meta.depths.length - 1) / 2)] ?? ""} m</span>
-            <span>{meta?.depths[meta.depths.length - 1] ?? ""} m</span>
+            <span>{meta ? Math.round(meta.depths[Math.floor((meta.depths.length - 1) / 2)]) : ""} m</span>
+            <span>{meta ? Math.round(meta.depths[meta.depths.length - 1]) : ""} m</span>
           </div>
           {meta && (
             <ThreeView

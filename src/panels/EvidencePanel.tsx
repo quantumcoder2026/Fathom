@@ -20,7 +20,7 @@ export default function EvidencePanel() {
   }, [cells]);
 
   return (
-    <Panel title="Evidence" sub={depthM !== null ? `at ${depthM} m` : undefined}>
+    <Panel title="Evidence" sub={depthM !== null ? `at ${Math.round(depthM)} m` : undefined}>
       <Toggle label="Show evidence overlay" on={showEvidence} onChange={toggleEvidence} />
       <p className={styles.matchLine} style={{ marginTop: 10 }}>
         Confidence is a weighting over nearby Argo observation count and recency — a tunable

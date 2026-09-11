@@ -60,7 +60,7 @@ export class DepthAxis {
     this.group.add(this.rule, this.ticks);
 
     for (const depth of meta.depths) {
-      const el = labelEl("f3d-tick", `${depth < 1 ? depth : Math.round(depth)} m`);
+      const el = labelEl("f3d-tick", `${Math.round(depth)} m`);
       const obj = new CSS2DObject(el);
       obj.position.set(this.axisX - 2.2, 0, this.axisZ);
       this.labels.push(obj);
