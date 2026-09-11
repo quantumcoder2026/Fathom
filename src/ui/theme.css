@@ -240,6 +240,21 @@ select {
   border: 1px solid rgba(239, 107, 115, 0.4);
 }
 
+/* the two-point distance readout (src/three/measure.ts) */
+.f3d-measure-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: var(--warn);
+  background: rgba(5, 7, 10, 0.82);
+  border: 1px solid rgba(234, 166, 74, 0.4);
+  border-radius: 3px;
+  padding: 3px 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
 .f3d-axis-title {
   font-family: var(--mono);
   font-size: 8.5px;

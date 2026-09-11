@@ -24,6 +24,7 @@ import type { Palette } from "./colormap";
 import { lonLatToGridIndex, worldXZToLonLat } from "./coords";
 import { FieldLayers, type GridLoader } from "./field";
 import { FloatMarkers } from "./markers";
+import { MeasureLayer, type MeasurePoint } from "./measure";
 import { ProfileTrail } from "./trail";
 import { createScene, type SceneHandle } from "./scene";
 
@@ -58,6 +59,10 @@ export interface ThreeViewProps {
 
   showEvidence?: boolean;
   evidenceCells?: EvidenceCell[];
+
+  /** the two-point distance measurement, or null while unset */
+  measureA?: MeasurePoint | null;
+  measureB?: MeasurePoint | null;
 }
 
 const CLICK_MOVE_TOLERANCE = 6; // px — beyond this a pointer gesture is an orbit
@@ -73,6 +78,7 @@ export default function ThreeView(props: ThreeViewProps) {
   const axisRef = useRef<DepthAxis | null>(null);
   const trailRef = useRef<ProfileTrail | null>(null);
   const evidenceRef = useRef<EvidenceLayer | null>(null);
+  const measureRef = useRef<MeasureLayer | null>(null);
 
   // latest props for the imperative pointer handlers, which live in a []-effect
   const live = useRef(props);
@@ -188,6 +194,8 @@ export default function ThreeView(props: ThreeViewProps) {
       trailRef.current = null;
       evidenceRef.current?.dispose();
       evidenceRef.current = null;
+      measureRef.current?.dispose();
+      measureRef.current = null;
       markersRef.current?.dispose();
       markersRef.current = null;
       fieldRef.current?.dispose();
@@ -216,6 +224,10 @@ export default function ThreeView(props: ThreeViewProps) {
     evidenceRef.current = evidence;
     handle.scene.add(evidence.group);
 
+    const measure = new MeasureLayer(props.meta);
+    measureRef.current = measure;
+    handle.scene.add(measure.group);
+
     const markers = new FloatMarkers(props.meta);
     markersRef.current = markers;
     handle.scene.add(markers.group);
@@ -224,11 +236,12 @@ export default function ThreeView(props: ThreeViewProps) {
     handle.renderOnce();
 
     return () => {
-      handle.scene.remove(axis.group, markers.group, trail.group, evidence.group);
+      handle.scene.remove(axis.group, markers.group, trail.group, evidence.group, measure.group);
       axis.dispose();
       markers.dispose();
       trail.dispose();
       evidence.dispose();
+      measure.dispose();
     };
   }, [props.meta]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -278,8 +291,17 @@ export default function ThreeView(props: ThreeViewProps) {
     axisRef.current?.setExaggeration(props.exaggeration);
     trailRef.current?.setExaggeration(props.exaggeration);
     evidenceRef.current?.setExaggeration(props.exaggeration);
+    measureRef.current?.set(props.measureA ?? null, props.measureB ?? null, props.exaggeration);
     sceneRef.current?.renderOnce();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.exaggeration]);
+
+  // the two-point distance measurement
+  useEffect(() => {
+    measureRef.current?.set(props.measureA ?? null, props.measureB ?? null, props.exaggeration);
+    sceneRef.current?.renderOnce();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.measureA, props.measureB]);
 
   useEffect(() => {
     fieldRef.current?.setOpacity(props.opacity);

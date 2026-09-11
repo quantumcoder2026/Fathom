@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState, type CSSProperties, type ReactNode } 
 import { api } from "../api/client";
 import ComparisonPanel from "../panels/ComparisonPanel";
 import EvidencePanel from "../panels/EvidencePanel";
+import MeasurePanel from "../panels/MeasurePanel";
 import PointPanel from "../panels/PointPanel";
 import ProfilePanel from "../panels/ProfilePanel";
 import ProvenancePanel from "../panels/ProvenancePanel";
@@ -26,6 +27,19 @@ export default function Workspace() {
   const [hover, setHover] = useState<PointInfo | null>(null);
   const [picked, setPicked] = useState<PointInfo | null>(null);
   const [tab, setTab] = useState<"float" | "point" | "evidence" | "provenance">("float");
+
+  const [measuring, setMeasuring] = useState(false);
+  const [measure, setMeasure] = useState<{ a: PointInfo | null; b: PointInfo | null }>({
+    a: null,
+    b: null,
+  });
+  const toggleMeasuring = useCallback(() => {
+    setMeasuring((v) => !v);
+    setMeasure({ a: null, b: null });
+  }, []);
+  const addMeasurePoint = useCallback((p: PointInfo) => {
+    setMeasure((m) => (!m.a ? { a: p, b: null } : !m.b ? { a: m.a, b: p } : { a: p, b: null }));
+  }, []);
 
   const loadGrid = useCallback(
     (variable: string, t: number, d: number) => api.fieldGrid(variable, t, d),
@@ -264,12 +278,15 @@ export default function Workspace() {
               }}
               onHoverPoint={setHover}
               onPickPoint={(p) => {
-                setPicked(p);
-                if (p) setTab("point");
+                setTab("point");
+                if (measuring) addMeasurePoint(p);
+                else setPicked(p);
               }}
               profile={s.profile}
               showEvidence={s.showEvidence}
               evidenceCells={s.evidenceCells}
+              measureA={measure.a}
+              measureB={measure.b}
             />
           )}
           {s.showEvidence && (
@@ -313,7 +330,18 @@ export default function Workspace() {
               <ComparisonPanel />
             </>
           )}
-          {tab === "point" && <PointPanel point={picked} onClose={() => setPicked(null)} />}
+          {tab === "point" && (
+            <>
+              <MeasurePanel
+                measuring={measuring}
+                a={measure.a}
+                b={measure.b}
+                onToggle={toggleMeasuring}
+                onClear={() => setMeasure({ a: null, b: null })}
+              />
+              <PointPanel point={picked} onClose={() => setPicked(null)} />
+            </>
+          )}
           {tab === "evidence" && <EvidencePanel />}
           {tab === "provenance" && <ProvenancePanel />}
         </div>
