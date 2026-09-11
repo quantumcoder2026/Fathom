@@ -2,8 +2,10 @@ import { useCallback, useState, type CSSProperties, type ReactNode } from "react
 
 import { api } from "../api/client";
 import ComparisonPanel from "../panels/ComparisonPanel";
+import EvidencePanel from "../panels/EvidencePanel";
 import PointPanel from "../panels/PointPanel";
 import ProfilePanel from "../panels/ProfilePanel";
+import ProvenancePanel from "../panels/ProvenancePanel";
 import { useStore } from "../state/store";
 import ColorbarEditor from "../ui/ColorbarEditor";
 import { LabeledSlider, Segmented, Toggle } from "../ui/kit";
@@ -23,6 +25,7 @@ export default function Workspace() {
   const meta = s.meta;
   const [hover, setHover] = useState<PointInfo | null>(null);
   const [picked, setPicked] = useState<PointInfo | null>(null);
+  const [tab, setTab] = useState<"float" | "point" | "evidence" | "provenance">("float");
 
   const loadGrid = useCallback(
     (variable: string, t: number, d: number) => api.fieldGrid(variable, t, d),
@@ -229,9 +232,15 @@ export default function Workspace() {
               loadGrid={loadGrid}
               floats={s.floats}
               selectedFloatId={s.selectedFloatId}
-              onSelectFloat={s.selectFloat}
+              onSelectFloat={(id) => {
+                s.selectFloat(id);
+                if (id) setTab("float");
+              }}
               onHoverPoint={setHover}
-              onPickPoint={setPicked}
+              onPickPoint={(p) => {
+                setPicked(p);
+                if (p) setTab("point");
+              }}
               profile={s.profile}
               showEvidence={s.showEvidence}
               evidenceCells={s.evidenceCells}
@@ -251,9 +260,37 @@ export default function Workspace() {
       </main>
 
       <aside className={styles.analysis}>
-        {picked && <PointPanel point={picked} onClose={() => setPicked(null)} />}
-        <ProfilePanel />
-        <ComparisonPanel />
+        <nav className={styles.tabBar} role="tablist">
+          {(
+            [
+              { id: "float", label: "Float" },
+              { id: "point", label: "Point" },
+              { id: "evidence", label: "Evidence" },
+              { id: "provenance", label: "Provenance" },
+            ] as const
+          ).map((t) => (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={tab === t.id}
+              className={`${styles.tab} ${tab === t.id ? styles.tabActive : ""}`}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+        <div className={styles.tabBody}>
+          {tab === "float" && (
+            <>
+              <ProfilePanel />
+              <ComparisonPanel />
+            </>
+          )}
+          {tab === "point" && <PointPanel point={picked} onClose={() => setPicked(null)} />}
+          {tab === "evidence" && <EvidencePanel />}
+          {tab === "provenance" && <ProvenancePanel />}
+        </div>
       </aside>
     </div>
   );

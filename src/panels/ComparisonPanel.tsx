@@ -78,7 +78,6 @@ export default function ComparisonPanel() {
   const unit = variable === "temperature" ? "°C" : "psu";
 
   const [shift, setShift] = useState(0);
-  const [showProv, setShowProv] = useState(false);
 
   const modelDepths = useMemo(
     () => (comparison?.points ?? []).filter((p) => p.model !== null).map((p) => p.depth),
@@ -136,39 +135,7 @@ export default function ComparisonPanel() {
   const fmt = (v: number | null, d = 2) => (v === null ? "—" : v.toFixed(d));
 
   return (
-    <Panel
-      title="Comparison"
-      sub={`float ${comparison.float_id} vs model`}
-      action={
-        <button className={styles.source} onClick={() => setShowProv((v) => !v)}>
-          source ▸
-        </button>
-      }
-    >
-      {showProv && (
-        <div className={styles.pop}>
-          <div>
-            <b>model_file</b> {comparison.provenance.model_file}
-          </div>
-          <div>
-            <b>obs_file</b> {comparison.provenance.obs_file}
-          </div>
-          <div>
-            <b>qc_flags_accepted</b> [{comparison.provenance.qc_flags_accepted.join(", ")}]
-          </div>
-          <div>
-            <b>separation</b> {comparison.matching.spatial_separation_km.toFixed(1)} km ·{" "}
-            {comparison.matching.temporal_separation_hours.toFixed(1)} h
-          </div>
-          <div>
-            <b>method</b> {comparison.matching.method}
-          </div>
-          <div>
-            <b>generated_at</b> {comparison.provenance.generated_at}
-          </div>
-        </div>
-      )}
-
+    <Panel title="Comparison" sub={`float ${comparison.float_id} vs model`}>
       {/* observed vs model */}
       <div className={styles.chartHead}>
         <span className={styles.chartName}>depth profile</span>

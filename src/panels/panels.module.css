@@ -224,7 +224,7 @@
   font-weight: 600;
 }
 
-/* ─── provenance popover ───────────────────────────────────── */
+/* ─── misc buttons ───────────────────────────────────────────── */
 .source {
   font-family: var(--mono);
   font-size: 10px;
@@ -236,25 +236,17 @@
 .source:hover {
   background: var(--panel-raised);
 }
-.pop {
-  position: absolute;
-  top: 38px;
-  right: 12px;
-  z-index: 20;
-  width: 268px;
-  padding: 13px 15px;
-  background: var(--panel-raised);
-  border: var(--h);
-  border-radius: var(--r);
+
+/* ─── provenance card (its own tab, not a popover) ───────────── */
+.provCard {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 10.5px;
   color: var(--text-dim);
-  line-height: 2;
-  box-shadow: var(--shadow);
+  line-height: 2.1;
 }
-.pop b {
+.provCard b {
   color: var(--text-faint);
   font-weight: 400;
   display: inline-block;
-  min-width: 118px;
+  min-width: 128px;
 }

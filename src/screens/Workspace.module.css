@@ -348,15 +348,49 @@
   grid-area: analysis;
   border-left: var(--h);
   background: var(--panel);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.tabBar {
+  display: flex;
+  flex-shrink: 0;
+  border-bottom: var(--h);
+  background: var(--panel-2);
+}
+.tab {
+  flex: 1;
+  padding: 10px 4px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  text-align: center;
+  border-bottom: 2px solid transparent;
+  transition: color 0.14s var(--ease), border-color 0.14s var(--ease), background 0.14s var(--ease);
+}
+.tab:hover {
+  color: var(--text-dim);
+  background: var(--panel-raised);
+}
+.tabActive {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.tabBody {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
 }
-.analysis > section {
+.tabBody > section {
   flex-shrink: 0;
 }
-.analysis > section:first-child {
+.tabBody > section:first-child {
   border-bottom: var(--h);
 }
 
