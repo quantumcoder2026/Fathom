@@ -21,3 +21,6 @@ npm-debug.log*
 !.vscode/extensions.json
 .idea/
 .DS_Store
+
+# internal — not for the public repo
+docs/
