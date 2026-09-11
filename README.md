@@ -34,10 +34,13 @@ outside the model domain — all render as an explicit gap, never as `0` and nev
 |---|---|---|
 | Model field | INCOIS gridded Argo analysis (`incois_argo_10d_VAM`) | `erddap.incois.gov.in` — INCOIS's own ERDDAP, one of the two model-output links in the problem statement. No account. |
 | Observations | Argo float profiles | Ifremer Argo ERDDAP. No account. |
-| (planned) | Copernicus GLORYS12 reanalysis | the independent numerical model for the headline comparison |
+| Model field (independent) | Copernicus GLORYS12 reanalysis (`GLOBAL_MULTIYEAR_PHY_001_030`) | Copernicus Marine Data Store web subsetter, free account, manual download — see `pipeline/precompute.py field --source glorys` |
 
-A whole month of the Indian Ocean field is **~4 MB**, fetched as a griddap slice — not the
-3.8 GB a full Copernicus subset would be.
+A whole month of the Indian Ocean field from INCOIS is **~4 MB**, fetched as a griddap
+slice — not the multi-GB a full Copernicus subset would be. GLORYS is the genuinely
+independent model (see *Honest boundaries* below) and is a manual, one-time download
+rather than a live fetch; both sources run through the same pipeline and the same
+`/field/*` contract, so switching is a precompute flag, not a code change.
 
 ## Stack
 
@@ -75,15 +78,18 @@ compare/     match.py (Ocean Match) + shift.py (error decomposition)
 api/         FastAPI — seven routes, real data or fixtures
 src/three/   the 3D: scene, stacked depth planes, float markers, bead-string trail,
              depth axis, point probe, and the entry globe
-src/panels/  ProfilePanel, ComparisonPanel, PointPanel — the analysis
+src/panels/  ProfilePanel, ComparisonPanel, PointPanel, EvidencePanel, ProvenancePanel,
+             MeasurePanel — the analysis, in a tabbed column (Float / Point / Evidence /
+             Provenance)
 docs/        MASTER_PLAN, BUILD_BOOK, and an append-only decisions.md + gotchas.md
 ```
 
 ## Honest boundaries
 
 - INCOIS VAM is an *objective analysis of Argo*, so an Argo-vs-VAM difference measures
-  representativeness plus analysis error, not independent model error. Where we say "model" we
-  mean this; GLORYS is the genuinely independent model and slots into the same pipeline.
+  representativeness plus analysis error, not independent model error. GLORYS (Copernicus) is
+  the genuinely independent numerical model, runs through the same pipeline, and is what a
+  headline comparison should use — VAM remains the zero-account, always-available fallback.
 - The evidence layer is a first-order screening tool, not adjoint-based optimal network design.
 - The displacement/amplitude split is a transfer from atmospheric forecast verification, used
   deliberately, not a new method.
