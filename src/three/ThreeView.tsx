@@ -40,6 +40,14 @@ export interface PointInfo {
   column?: (number | null)[];
 }
 
+/** A level of the selected float's profile, read by hovering its bead. */
+export interface BeadInfo {
+  depth: number;
+  value: number;
+  /** true when this level is deeper than the model's deepest level */
+  belowModel: boolean;
+}
+
 export interface ThreeViewProps {
   meta: FieldMeta;
   variable: string;
@@ -55,6 +63,7 @@ export interface ThreeViewProps {
   profile?: Profile | null;
   onSelectFloat?: (id: string) => void;
   onHoverPoint?: (info: PointInfo | null) => void;
+  onHoverBead?: (info: BeadInfo | null) => void;
   onPickPoint?: (info: PointInfo) => void;
 
   showEvidence?: boolean;
@@ -160,9 +169,23 @@ export default function ThreeView(props: ThreeViewProps) {
     };
     const onMove = (e: PointerEvent) => {
       if (down) return; // orbiting — don't chase the cursor
+      // a bead wins over the plane underneath it: it is the more specific thing
+      // the cursor is on, and below the model floor it is the only readable one
+      const bead = trailRef.current?.pick(e.clientX, e.clientY, canvas, handle.camera) ?? null;
+      live.current.onHoverBead?.(bead);
+      if (bead) {
+        live.current.onHoverPoint?.(null);
+        canvas.style.cursor = "crosshair";
+        return;
+      }
+      canvas.style.cursor = "";
       live.current.onHoverPoint?.(probe(e.clientX, e.clientY));
     };
-    const onLeave = () => live.current.onHoverPoint?.(null);
+    const onLeave = () => {
+      live.current.onHoverPoint?.(null);
+      live.current.onHoverBead?.(null);
+      canvas.style.cursor = "";
+    };
     const onUp = (e: PointerEvent) => {
       if (!down) return;
       const moved = Math.abs(e.clientX - down.x) + Math.abs(e.clientY - down.y);
@@ -308,9 +331,14 @@ export default function ThreeView(props: ThreeViewProps) {
     sceneRef.current?.renderOnce();
   }, [props.opacity]);
 
-  // the selected float's bead string
+  // the selected float's bead string, and the ruler that has to reach it
   useEffect(() => {
     trailRef.current?.set(props.profile ?? null, props.colormap, props.exaggeration);
+    let deepest = 0;
+    for (const level of props.profile?.levels ?? []) {
+      if (level.value !== null && level.depth > deepest) deepest = level.depth;
+    }
+    axisRef.current?.setBelowFloor(deepest > 0 ? deepest : null);
     sceneRef.current?.renderOnce();
   }, [props.profile]); // eslint-disable-line react-hooks/exhaustive-deps
 

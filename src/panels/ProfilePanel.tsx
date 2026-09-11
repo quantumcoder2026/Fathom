@@ -3,6 +3,7 @@ import {
   Line,
   LineChart,
   ReferenceDot,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -15,12 +16,34 @@ import styles from "./panels.module.css";
 
 const AXIS = { stroke: "#2a3742", tick: { fill: "#7d8b98", fontSize: 9, fontFamily: "JetBrains Mono" } };
 
+/** The measured level closest to `depth`, or null if the profile doesn't reach it.
+ *  Deliberately returns a real measured level rather than interpolating — the
+ *  readout then quotes a number the float actually recorded, at its true depth. */
+function nearestLevel<T extends { depth: number; value: number | null }>(
+  levels: T[],
+  depth: number | null,
+): T | null {
+  if (depth === null) return null;
+  let best: T | null = null;
+  let bestGap = Infinity;
+  for (const l of levels) {
+    if (l.value === null) continue;
+    const gap = Math.abs(l.depth - depth);
+    if (gap < bestGap) {
+      bestGap = gap;
+      best = l;
+    }
+  }
+  return best;
+}
+
 export default function ProfilePanel() {
   const profile = useStore((s) => s.profile);
   const loading = useStore((s) => s.loading.profile);
   const selected = useStore((s) => s.selectedFloatId);
   const variable = useStore((s) => s.variable);
   const error = useStore((s) => s.error);
+  const activeDepth = useStore((s) => s.meta?.depths[s.depthIndex] ?? null);
 
   if (!selected)
     return (
@@ -41,6 +64,7 @@ export default function ProfilePanel() {
   const unit = profile.units || (variable === "temperature" ? "degC" : "psu");
   const rejected = profile.levels.filter((l) => l.value === null);
   const data = profile.levels.map((l) => ({ depth: l.depth, value: l.value }));
+  const here = nearestLevel(profile.levels, activeDepth);
 
   return (
     <Panel
@@ -102,9 +126,29 @@ export default function ProfilePanel() {
                 stroke="#ec6a72"
               />
             ))}
+            {activeDepth !== null && (
+              <ReferenceLine y={activeDepth} stroke="#eaa64a" strokeDasharray="3 3" />
+            )}
           </LineChart>
         </ResponsiveContainer>
       </div>
+      {activeDepth !== null && (
+        <div className={styles.depthCue}>
+          <span className={styles.depthCueMark} />
+          depth slider at <b>{Math.round(activeDepth)} m</b>
+          {here ? (
+            <>
+              {" · nearest measured level "}
+              <b>
+                {here.value!.toFixed(2)} {unit}
+              </b>
+              {` at ${Math.round(here.depth)} m`}
+            </>
+          ) : (
+            " · this float has no measured level there"
+          )}
+        </div>
+      )}
       {rejected.length > 0 && (
         <div className={styles.note}>
           <span className={styles.badNote}>

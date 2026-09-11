@@ -10,7 +10,7 @@ import ProvenancePanel from "../panels/ProvenancePanel";
 import { useStore } from "../state/store";
 import ColorbarEditor from "../ui/ColorbarEditor";
 import { LabeledSlider, Segmented, Toggle } from "../ui/kit";
-import ThreeView, { type PointInfo } from "../three/ThreeView";
+import ThreeView, { type BeadInfo, type PointInfo } from "../three/ThreeView";
 import { formatLonLat } from "../three/coords";
 import styles from "./Workspace.module.css";
 
@@ -25,6 +25,7 @@ export default function Workspace() {
   const s = useStore();
   const meta = s.meta;
   const [hover, setHover] = useState<PointInfo | null>(null);
+  const [bead, setBead] = useState<BeadInfo | null>(null);
   const [picked, setPicked] = useState<PointInfo | null>(null);
   const [tab, setTab] = useState<"float" | "point" | "evidence" | "provenance">("float");
 
@@ -243,7 +244,17 @@ export default function Workspace() {
                 : "—"}
             </span>
             <span className={styles.roProbe}>
-              {hover ? (
+              {bead ? (
+                <>
+                  <b className={styles.roBead}>
+                    {bead.value.toFixed(2)} {unit}
+                  </b>
+                  <i>
+                    float · {Math.round(bead.depth)} m
+                    {bead.belowModel ? " · below the model floor" : ""}
+                  </i>
+                </>
+              ) : hover ? (
                 <>
                   <b>
                     {hover.value === null ? "no data" : `${hover.value.toFixed(2)} ${unit}`}
@@ -251,7 +262,7 @@ export default function Workspace() {
                   <i>{formatLonLat(hover.lon, hover.lat)}</i>
                 </>
               ) : (
-                <i>hover the field to read a value</i>
+                <i>hover the field, or a float's beads, to read a value</i>
               )}
             </span>
           </div>
@@ -277,6 +288,7 @@ export default function Workspace() {
                 if (id) setTab("float");
               }}
               onHoverPoint={setHover}
+              onHoverBead={setBead}
               onPickPoint={(p) => {
                 setTab("point");
                 if (measuring) addMeasurePoint(p);

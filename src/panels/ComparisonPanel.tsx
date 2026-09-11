@@ -75,6 +75,7 @@ export default function ComparisonPanel() {
   const selected = useStore((s) => s.selectedFloatId);
   const variable = useStore((s) => s.variable);
   const error = useStore((s) => s.error);
+  const activeDepth = useStore((s) => s.meta?.depths[s.depthIndex] ?? null);
   const unit = variable === "temperature" ? "°C" : "psu";
 
   const [shift, setShift] = useState(0);
@@ -107,6 +108,22 @@ export default function ComparisonPanel() {
     if (!d.length) return null;
     return Math.sqrt(d.reduce((a, v) => a + v * v, 0) / d.length);
   }, [chartData]);
+
+  // the row closest to the depth slider, so the slider reads out here too.
+  // Uses chartData, not the raw points, so it reflects the shift on screen.
+  const atDepth = useMemo(() => {
+    if (activeDepth === null) return null;
+    let best: (typeof chartData)[number] | null = null;
+    let bestGap = Infinity;
+    for (const row of chartData) {
+      const gap = Math.abs(row.depth - activeDepth);
+      if (gap < bestGap) {
+        bestGap = gap;
+        best = row;
+      }
+    }
+    return best;
+  }, [chartData, activeDepth]);
 
   if (!selected)
     return (
@@ -178,6 +195,9 @@ export default function ComparisonPanel() {
               connectNulls={false}
               isAnimationActive={false}
             />
+            {activeDepth !== null && (
+              <ReferenceLine y={activeDepth} stroke="#eaa64a" strokeDasharray="3 3" />
+            )}
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -206,10 +226,43 @@ export default function ComparisonPanel() {
             <XAxis type="number" domain={["auto", "auto"]} stroke={AX.stroke} tick={AX.tick} tickLine={false} height={18} />
             <YAxis type="number" dataKey="depth" domain={[0, "dataMax"]} stroke={AX.stroke} tick={AX.tick} tickLine={false} width={40} />
             <ReferenceLine x={0} stroke="#3a4652" />
+            {activeDepth !== null && (
+              <ReferenceLine y={activeDepth} stroke="#eaa64a" strokeDasharray="3 3" />
+            )}
             <Line type="monotone" dataKey="difference" stroke="#e8a33d" strokeWidth={1.5} dot={false} connectNulls={false} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
+
+      {activeDepth !== null && (
+        <div className={styles.depthCue}>
+          <span className={styles.depthCueMark} />
+          at <b>{Math.round(activeDepth)} m</b>
+          {atDepth ? (
+            atDepth.status === "ok" && atDepth.observed !== null && atDepth.model !== null ? (
+              <>
+                {" · observed "}<b>{atDepth.observed.toFixed(2)}</b>
+                {" · model "}<b>{atDepth.model.toFixed(2)}</b>
+                {" · Δ "}
+                <b>
+                  {atDepth.difference !== null && atDepth.difference > 0 ? "+" : ""}
+                  {atDepth.difference?.toFixed(2)} {unit}
+                </b>
+              </>
+            ) : (
+              <>
+                {" · "}
+                <span className={styles.badNote}>
+                  {STATUS_LABEL[atDepth.status] ?? atDepth.status}
+                </span>
+                {atDepth.observed !== null && ` · observed ${atDepth.observed.toFixed(2)} ${unit}`}
+              </>
+            )
+          ) : (
+            " · outside this float's profile"
+          )}
+        </div>
+      )}
 
       {/* stats */}
       <div className={styles.section}>

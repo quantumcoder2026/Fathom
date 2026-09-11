@@ -224,6 +224,34 @@
   font-weight: 600;
 }
 
+/* ─── "where the depth slider is" readout under a chart ───────── */
+.depthCue {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 5px;
+  margin-top: 8px;
+  padding: 6px 9px;
+  border: var(--h);
+  border-left: 2px solid var(--warn);
+  border-radius: var(--r);
+  background: rgba(234, 166, 74, 0.06);
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.7;
+  color: var(--text-dim);
+}
+.depthCue b {
+  color: var(--text);
+  font-weight: 600;
+}
+.depthCueMark {
+  width: 14px;
+  height: 0;
+  border-top: 1px dashed var(--warn);
+  flex-shrink: 0;
+}
+
 /* ─── misc buttons ───────────────────────────────────────────── */
 .source {
   font-family: var(--mono);

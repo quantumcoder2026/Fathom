@@ -261,6 +261,10 @@
   font-weight: 600;
   color: var(--accent);
 }
+/* a value read off the float's own beads, not the model field */
+.roBead {
+  color: var(--warn) !important;
+}
 .roProbe i {
   font-style: normal;
   color: var(--text-faint);

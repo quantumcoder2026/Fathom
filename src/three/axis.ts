@@ -46,6 +46,12 @@ export class DepthAxis {
   private readonly planeLabel: CSS2DObject;
   private readonly planeLabelEl: HTMLDivElement;
 
+  /** Ticks below the model's deepest level, for the stretch of a float profile
+   *  the model does not cover. Without these the trail dangles past the end of
+   *  the ruler with nothing to read its depth against. */
+  private belowDepths: number[] = [];
+  private belowLabels: CSS2DObject[] = [];
+
   private exaggeration = 1;
   private active = 0;
 
@@ -89,6 +95,41 @@ export class DepthAxis {
     this.layout();
   }
 
+  /** Extend the ruler past the model floor down to `deepest` metres (the selected
+   *  float's deepest measured level), or clear it with null. */
+  setBelowFloor(deepest: number | null): void {
+    const floor = this.meta.depths[this.meta.depths.length - 1] ?? 0;
+    const next: number[] = [];
+    if (deepest !== null && deepest > floor) {
+      // round ticks, coarse enough not to crowd: 250 m normally, 500 m if deep
+      const stepM = deepest - floor > 1500 ? 500 : 250;
+      for (let d = Math.ceil(floor / stepM) * stepM; d <= deepest; d += stepM) {
+        if (d > floor) next.push(d);
+      }
+      next.push(deepest); // always mark where the float actually ends
+    }
+
+    const same =
+      next.length === this.belowDepths.length &&
+      next.every((d, i) => Math.abs(d - this.belowDepths[i]) < 0.5);
+    if (same) return;
+
+    for (const obj of this.belowLabels) {
+      obj.removeFromParent();
+      obj.element.remove();
+    }
+    this.belowLabels = [];
+    this.belowDepths = next;
+    for (const depth of next) {
+      const el = labelEl("f3d-tick f3d-tick-below", `${Math.round(depth)} m`);
+      const obj = new CSS2DObject(el);
+      obj.position.set(this.axisX - 2.2, 0, this.axisZ);
+      this.belowLabels.push(obj);
+      this.group.add(obj);
+    }
+    this.layout();
+  }
+
   /** Text shown floating beside the active plane, e.g. "75 m · 12.4–29.8 °C". */
   setPlaneLabel(text: string | null): void {
     this.planeLabel.visible = text !== null;
@@ -98,8 +139,9 @@ export class DepthAxis {
   private layout(): void {
     const { meta, exaggeration } = this;
     const ys = meta.depths.map((d) => depthToWorldY(meta, d, exaggeration));
+    const belowYs = this.belowDepths.map((d) => depthToWorldY(meta, d, exaggeration));
     const top = 0;
-    const bottom = ys[ys.length - 1] ?? 0;
+    const bottom = belowYs.length ? belowYs[belowYs.length - 1] : (ys[ys.length - 1] ?? 0);
 
     this.ruleGeom.setAttribute(
       "position",
@@ -113,7 +155,21 @@ export class DepthAxis {
     for (const y of ys) {
       tickPts.push(this.axisX, y, this.axisZ, this.axisX + TICK_LEN, y, this.axisZ);
     }
+    for (const y of belowYs) {
+      // shorter ticks so the covered range still reads as the primary scale
+      tickPts.push(this.axisX, y, this.axisZ, this.axisX + TICK_LEN * 0.6, y, this.axisZ);
+    }
     this.tickGeom.setAttribute("position", new THREE.Float32BufferAttribute(tickPts, 3));
+
+    let lastBelowY = Infinity;
+    this.belowLabels.forEach((obj, i) => {
+      const y = belowYs[i];
+      const isLast = i === belowYs.length - 1;
+      const show = isLast || Math.abs(lastBelowY - y) >= LABEL_GAP_WORLD;
+      obj.visible = show;
+      if (show) lastBelowY = y;
+      obj.position.y = y;
+    });
 
     // thin labels so they never collide, but always keep the first, last and active
     let lastShownY = Infinity;
@@ -135,7 +191,7 @@ export class DepthAxis {
   }
 
   dispose(): void {
-    for (const obj of [...this.labels, this.title, this.planeLabel]) {
+    for (const obj of [...this.labels, ...this.belowLabels, this.title, this.planeLabel]) {
       obj.removeFromParent();
       obj.element.remove();
     }

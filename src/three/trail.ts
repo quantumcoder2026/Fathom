@@ -33,8 +33,10 @@ export class ProfileTrail {
 
   private beads: THREE.Mesh[] = [];
   private line: THREE.Line | null = null;
-  private levels: { depth: number; value: number }[] = [];
+  private levels: { depth: number; value: number; belowModel: boolean }[] = [];
   private notes: CSS2DObject[] = [];
+  private readonly raycaster = new THREE.Raycaster();
+  private readonly ndc = new THREE.Vector2();
 
   constructor(meta: FieldMeta) {
     this.meta = meta;
@@ -49,14 +51,14 @@ export class ProfileTrail {
     );
     if (!good.length) return;
 
+    const modelFloor = this.meta.depths[this.meta.depths.length - 1] ?? 0;
     const stride = Math.max(1, Math.ceil(good.length / MAX_BEADS));
     this.levels = good
       .filter((_, i) => i % stride === 0 || i === good.length - 1)
-      .map((l) => ({ depth: l.depth, value: l.value }));
+      .map((l) => ({ depth: l.depth, value: l.value, belowModel: l.depth > modelFloor }));
 
     const [x, z] = lonLatToWorldXZ(this.meta, profile.lon, profile.lat);
     const span = colormap.max - colormap.min || 1;
-    const modelFloor = this.meta.depths[this.meta.depths.length - 1] ?? 0;
     const pts: number[] = [];
 
     for (const level of this.levels) {
@@ -65,7 +67,7 @@ export class ProfileTrail {
       // Below the model's deepest level the float is still measuring but there is
       // nothing to compare against — draw those beads hollow and faint so the
       // string visibly changes character instead of just running off the bottom.
-      const belowModel = level.depth > modelFloor;
+      const belowModel = level.belowModel;
       const mesh = new THREE.Mesh(
         this.geometry,
         new THREE.MeshBasicMaterial({
@@ -112,6 +114,28 @@ export class ProfileTrail {
     obj.position.set(x, y, z);
     this.notes.push(obj);
     this.group.add(obj);
+  }
+
+  /** The bead under the pointer, or null. This is the only way to read the float
+   *  below the model's deepest level — the depth slider stops at the model floor,
+   *  so nothing else in the UI can reach that part of the profile. */
+  pick(
+    clientX: number,
+    clientY: number,
+    dom: HTMLElement,
+    camera: THREE.Camera,
+  ): { depth: number; value: number; belowModel: boolean } | null {
+    if (!this.beads.length) return null;
+    const rect = dom.getBoundingClientRect();
+    this.ndc.set(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    this.raycaster.setFromCamera(this.ndc, camera);
+    const hit = this.raycaster.intersectObjects(this.beads, false)[0];
+    if (!hit) return null;
+    const i = this.beads.indexOf(hit.object as THREE.Mesh);
+    return i >= 0 ? this.levels[i] : null;
   }
 
   setExaggeration(factor: number): void {

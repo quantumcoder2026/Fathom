@@ -140,6 +140,11 @@ select {
   font-weight: 600;
   font-size: 10px;
 }
+/* below the model's deepest level: the float still measures, the model does not */
+.f3d-tick-below {
+  color: rgba(234, 166, 74, 0.75);
+  font-style: italic;
+}
 .f3d-plane-label {
   font-family: var(--mono);
   font-size: 10px;
