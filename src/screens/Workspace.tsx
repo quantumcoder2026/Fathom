@@ -86,9 +86,9 @@ export default function Workspace() {
           </div>
         </div>
 
-        <div className={styles.headline}>
+        <div className={styles.headline} title="fraction of the model water column with no recent nearby observation">
           <span className={styles.headlineNum}>
-            {s.unconstrainedPct === null ? "—%" : `${s.unconstrainedPct}%`}
+            {s.unconstrainedPct === null ? "···" : `${s.unconstrainedPct}%`}
           </span>
           <span className={styles.headlineCap}>
             unconstrained<br />water column
@@ -132,11 +132,34 @@ export default function Workspace() {
           <ColorbarEditor />
         </RailGroup>
 
-        <RailGroup n="04" title="Overlay">
+        <RailGroup n="04" title="Evidence">
           <Toggle label="Evidence layer" on={s.showEvidence} onChange={s.toggleEvidence} />
           <p className={styles.groupNote}>
-            Shades the field by how well recent observations support it.
+            Shades the field by how well recent Argo profiles support it. Both knobs are
+            assumptions, not physical constants.
           </p>
+          {s.showEvidence && (
+            <>
+              <LabeledSlider
+                label="influence radius"
+                value={s.evidenceRadius}
+                display={`${s.evidenceRadius.toFixed(1)}°`}
+                min={1}
+                max={5}
+                step={0.5}
+                onChange={s.setEvidenceRadius}
+              />
+              <LabeledSlider
+                label="recency half-life"
+                value={s.evidenceHalfLife}
+                display={`${s.evidenceHalfLife} d`}
+                min={7}
+                max={45}
+                step={1}
+                onChange={s.setEvidenceHalfLife}
+              />
+            </>
+          )}
         </RailGroup>
 
         <RailGroup n="05" title="Dataset">
@@ -211,6 +234,7 @@ export default function Workspace() {
               onPickPoint={setPicked}
               profile={s.profile}
               showEvidence={s.showEvidence}
+              evidenceCells={s.evidenceCells}
             />
           )}
           {s.showEvidence && (

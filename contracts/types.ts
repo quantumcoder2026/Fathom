@@ -152,6 +152,14 @@ export interface EvidenceCell {
  *   const grid = new Float32Array(buf);  // grid[row * nx + col]
  */
 
+/** GET /evidence/headline?t=&region= — the always-visible "% unconstrained" figure. */
+export interface UnconstrainedSummary {
+  percent: number | null; // null if the field isn't loaded
+  label: string;          // "this region" | "the Bay of Bengal"
+  n_cells: number;
+  time_index: number;
+}
+
 /** GET /health */
 export interface HealthResponse {
   status: "ok";

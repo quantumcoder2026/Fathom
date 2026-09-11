@@ -17,8 +17,9 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-import type { FieldMeta, FloatIndexItem, Profile } from "../../contracts/types";
+import type { EvidenceCell, FieldMeta, FloatIndexItem, Profile } from "../../contracts/types";
 import { DepthAxis } from "./axis";
+import { EvidenceLayer } from "./evidence";
 import type { Palette } from "./colormap";
 import { lonLatToGridIndex, worldXZToLonLat } from "./coords";
 import { FieldLayers, type GridLoader } from "./field";
@@ -55,8 +56,8 @@ export interface ThreeViewProps {
   onHoverPoint?: (info: PointInfo | null) => void;
   onPickPoint?: (info: PointInfo) => void;
 
-  // reserved for the evidence pass
   showEvidence?: boolean;
+  evidenceCells?: EvidenceCell[];
 }
 
 const CLICK_MOVE_TOLERANCE = 6; // px — beyond this a pointer gesture is an orbit
@@ -71,6 +72,7 @@ export default function ThreeView(props: ThreeViewProps) {
   const markersRef = useRef<FloatMarkers | null>(null);
   const axisRef = useRef<DepthAxis | null>(null);
   const trailRef = useRef<ProfileTrail | null>(null);
+  const evidenceRef = useRef<EvidenceLayer | null>(null);
 
   // latest props for the imperative pointer handlers, which live in a []-effect
   const live = useRef(props);
@@ -184,6 +186,8 @@ export default function ThreeView(props: ThreeViewProps) {
       axisRef.current = null;
       trailRef.current?.dispose();
       trailRef.current = null;
+      evidenceRef.current?.dispose();
+      evidenceRef.current = null;
       markersRef.current?.dispose();
       markersRef.current = null;
       fieldRef.current?.dispose();
@@ -208,6 +212,10 @@ export default function ThreeView(props: ThreeViewProps) {
     trailRef.current = trail;
     handle.scene.add(trail.group);
 
+    const evidence = new EvidenceLayer(props.meta);
+    evidenceRef.current = evidence;
+    handle.scene.add(evidence.group);
+
     const markers = new FloatMarkers(props.meta);
     markersRef.current = markers;
     handle.scene.add(markers.group);
@@ -216,10 +224,11 @@ export default function ThreeView(props: ThreeViewProps) {
     handle.renderOnce();
 
     return () => {
-      handle.scene.remove(axis.group, markers.group, trail.group);
+      handle.scene.remove(axis.group, markers.group, trail.group, evidence.group);
       axis.dispose();
       markers.dispose();
       trail.dispose();
+      evidence.dispose();
     };
   }, [props.meta]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -259,6 +268,7 @@ export default function ThreeView(props: ThreeViewProps) {
   useEffect(() => {
     fieldRef.current?.setActiveDepth(props.depthIndex);
     axisRef.current?.setActive(props.depthIndex);
+    evidenceRef.current?.setActiveDepth(props.depthIndex);
     updatePlaneLabel();
     sceneRef.current?.renderOnce();
   }, [props.depthIndex]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -267,6 +277,7 @@ export default function ThreeView(props: ThreeViewProps) {
     fieldRef.current?.setExaggeration(props.exaggeration);
     axisRef.current?.setExaggeration(props.exaggeration);
     trailRef.current?.setExaggeration(props.exaggeration);
+    evidenceRef.current?.setExaggeration(props.exaggeration);
     sceneRef.current?.renderOnce();
   }, [props.exaggeration]);
 
@@ -280,6 +291,17 @@ export default function ThreeView(props: ThreeViewProps) {
     trailRef.current?.set(props.profile ?? null, props.colormap, props.exaggeration);
     sceneRef.current?.renderOnce();
   }, [props.profile]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // the evidence overlay
+  useEffect(() => {
+    const ev = evidenceRef.current;
+    if (!ev) return;
+    ev.setVisible(!!props.showEvidence);
+    if (props.showEvidence && props.evidenceCells?.length) {
+      ev.set(props.evidenceCells, props.depthIndex, props.exaggeration);
+    }
+    sceneRef.current?.renderOnce();
+  }, [props.showEvidence, props.evidenceCells]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fieldRef.current?.setColormap(props.colormap);

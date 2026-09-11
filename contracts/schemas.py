@@ -139,6 +139,13 @@ class EvidenceCell(BaseModel):
     status: EvidenceStatus
 
 
+class UnconstrainedSummary(BaseModel):
+    percent: int | None
+    label: str
+    n_cells: int
+    time_index: int
+
+
 class HealthResponse(BaseModel):
     status: Literal["ok"] = "ok"
 

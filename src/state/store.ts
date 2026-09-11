@@ -7,6 +7,7 @@ import { create } from "zustand";
 import { api } from "../api/client";
 import type {
   ComparisonResult,
+  EvidenceCell,
   FieldMeta,
   FloatIndexItem,
   Profile,
@@ -63,6 +64,9 @@ interface AppState {
   error: string | null;
 
   showEvidence: boolean;
+  evidenceCells: EvidenceCell[];
+  evidenceRadius: number;
+  evidenceHalfLife: number;
   colormap: Colormap;
   unconstrainedPct: number | null;
 
@@ -75,11 +79,15 @@ interface AppState {
   setOpacity: (o: number) => void;
   selectFloat: (id: string | null) => void;
   toggleEvidence: () => void;
+  setEvidenceRadius: (deg: number) => void;
+  setEvidenceHalfLife: (days: number) => void;
   setColormap: (patch: Partial<Colormap>) => void;
   resetColormapToRange: () => void;
 
   loadMeta: () => Promise<void>;
   loadFloats: () => Promise<void>;
+  loadEvidence: () => Promise<void>;
+  loadHeadline: () => Promise<void>;
 }
 
 const DEFAULT_COLORMAP: Colormap = { min: 2, max: 31, palette: "blue-red", scale: "linear" };
@@ -104,13 +112,17 @@ export const useStore = create<AppState>((set, get) => ({
   error: null,
 
   showEvidence: false,
+  evidenceCells: [],
+  evidenceRadius: 2.5, // degrees — the "influence radius" knob
+  evidenceHalfLife: 21, // days — the "recency half-life" knob
   colormap: DEFAULT_COLORMAP,
-  unconstrainedPct: 38, // fixture-stage headline; real value comes from /evidence later
+  unconstrainedPct: null, // real value comes from /evidence/headline
 
   enterRegion: (region) => {
     set({ screen: "workspace", region });
     void get().loadMeta();
     void get().loadFloats();
+    void get().loadHeadline();
   },
 
   backToEntry: () =>
@@ -129,9 +141,14 @@ export const useStore = create<AppState>((set, get) => ({
   setTimeIndex: (timeIndex) => {
     set({ timeIndex });
     void get().loadFloats();
+    void get().loadHeadline();
+    if (get().showEvidence) void get().loadEvidence();
   },
 
-  setDepthIndex: (depthIndex) => set({ depthIndex }),
+  setDepthIndex: (depthIndex) => {
+    set({ depthIndex });
+    if (get().showEvidence) void get().loadEvidence();
+  },
   setExaggeration: (exaggeration) => set({ exaggeration }),
   setOpacity: (opacity) => set({ opacity }),
 
@@ -140,7 +157,20 @@ export const useStore = create<AppState>((set, get) => ({
     if (id) void loadForFloat(set, get, id);
   },
 
-  toggleEvidence: () => set({ showEvidence: !get().showEvidence }),
+  toggleEvidence: () => {
+    const showEvidence = !get().showEvidence;
+    set({ showEvidence });
+    if (showEvidence && !get().evidenceCells.length) void get().loadEvidence();
+  },
+
+  setEvidenceRadius: (evidenceRadius) => {
+    set({ evidenceRadius });
+    debounceEvidence(get);
+  },
+  setEvidenceHalfLife: (evidenceHalfLife) => {
+    set({ evidenceHalfLife });
+    debounceEvidence(get);
+  },
 
   setColormap: (patch) => set({ colormap: { ...get().colormap, ...patch } }),
 
@@ -176,10 +206,59 @@ export const useStore = create<AppState>((set, get) => ({
       set((s) => ({ error: String(e), loading: { ...s.loading, floats: false } }));
     }
   },
+
+  loadEvidence: async () => {
+    const { timeIndex, depthIndex, evidenceRadius, evidenceHalfLife } = get();
+    try {
+      const cells = await api.evidence(timeIndex, depthIndex, evidenceRadius, evidenceHalfLife);
+      // drop a response whose request is no longer the current one
+      const n = get();
+      if (
+        n.timeIndex === timeIndex &&
+        n.depthIndex === depthIndex &&
+        n.evidenceRadius === evidenceRadius &&
+        n.evidenceHalfLife === evidenceHalfLife
+      ) {
+        set({ evidenceCells: cells });
+      }
+    } catch {
+      /* leave the last-good overlay in place */
+    }
+  },
+
+  loadHeadline: async () => {
+    const { timeIndex, evidenceRadius, evidenceHalfLife } = get();
+    try {
+      const summary = await api.evidenceHeadline(
+        timeIndex, "full", evidenceRadius, evidenceHalfLife,
+      );
+      const n = get();
+      if (
+        n.timeIndex === timeIndex &&
+        n.evidenceRadius === evidenceRadius &&
+        n.evidenceHalfLife === evidenceHalfLife
+      ) {
+        set({ unconstrainedPct: summary.percent });
+      }
+    } catch {
+      /* keep the last value */
+    }
+  },
 }));
 
 // dev-only handle so the store can be driven from the console while testing
 if (import.meta.env.DEV) (window as unknown as { __store?: unknown }).__store = useStore;
+
+// the headline recompute walks every depth level, so don't fire it on every
+// pixel of a knob drag — settle for 350 ms first
+let evidenceTimer: ReturnType<typeof setTimeout> | undefined;
+function debounceEvidence(get: () => AppState) {
+  clearTimeout(evidenceTimer);
+  evidenceTimer = setTimeout(() => {
+    void get().loadHeadline();
+    if (get().showEvidence) void get().loadEvidence();
+  }, 350);
+}
 
 async function loadForFloat(
   set: (partial: Partial<AppState> | ((s: AppState) => Partial<AppState>)) => void,

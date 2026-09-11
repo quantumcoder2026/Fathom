@@ -34,6 +34,7 @@ from contracts.schemas import (
     FloatIndexItem,
     HealthResponse,
     Profile,
+    UnconstrainedSummary,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -191,5 +192,16 @@ def compare(float_id: str, variable: str = "temperature"):
 
 
 @app.get("/evidence", response_model=list[EvidenceCell])
-def evidence(t: int = 0, d: int = 0):
+def evidence(t: int = 0, d: int = 0, radius: float = 2.5, half_life: float = 21.0):
+    if have_field() and have_floats():
+        from compare.evidence import evidence_grid
+        return evidence_grid(t, d, radius, half_life)
     return load("evidence_sample.json")
+
+
+@app.get("/evidence/headline", response_model=UnconstrainedSummary)
+def evidence_headline(t: int = 0, region: str = "full", radius: float = 2.5, half_life: float = 21.0):
+    if have_field() and have_floats():
+        from compare.evidence import unconstrained_fraction
+        return unconstrained_fraction(t, region, radius, half_life)
+    return {"percent": 38, "label": "the Bay of Bengal", "n_cells": 0, "time_index": t}

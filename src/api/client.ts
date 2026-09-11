@@ -9,6 +9,7 @@ import type {
   FieldMeta,
   FloatIndexItem,
   Profile,
+  UnconstrainedSummary,
 } from "../../contracts/types";
 
 const BASE = (import.meta.env.VITE_API_BASE ?? "http://localhost:8000").replace(/\/$/, "");
@@ -50,8 +51,29 @@ export const api = {
   compare: (floatId: string, variable: string, signal?: AbortSignal) =>
     json<ComparisonResult>(`/compare/${floatId}?variable=${variable}`, signal),
 
-  evidence: (timeIndex: number, depthIndex: number, signal?: AbortSignal) =>
-    json<EvidenceCell[]>(`/evidence?t=${timeIndex}&d=${depthIndex}`, signal),
+  evidence: (
+    timeIndex: number,
+    depthIndex: number,
+    radiusDeg: number,
+    halfLifeDays: number,
+    signal?: AbortSignal,
+  ) =>
+    json<EvidenceCell[]>(
+      `/evidence?t=${timeIndex}&d=${depthIndex}&radius=${radiusDeg}&half_life=${halfLifeDays}`,
+      signal,
+    ),
+
+  evidenceHeadline: (
+    timeIndex: number,
+    region: string,
+    radiusDeg: number,
+    halfLifeDays: number,
+    signal?: AbortSignal,
+  ) =>
+    json<UnconstrainedSummary>(
+      `/evidence/headline?t=${timeIndex}&region=${region}&radius=${radiusDeg}&half_life=${halfLifeDays}`,
+      signal,
+    ),
 };
 
 export { BASE as API_BASE };
